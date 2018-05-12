@@ -1,0 +1,4 @@
+discord.py
+aiohttp
+websockets
+requests==2.18.4
