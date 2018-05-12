@@ -47,15 +47,4 @@ async def clo_current_supply(ctx):
     embed.add_field(name = "Estimated Market Cap", value = "$ {}".format(localize(price * supply)))
     await client.say(embed = embed)
 
-
-    old ="""
-    messages = [
-        'Current Supply: {}'.format(localize(supply)),
-        'Current Price Crypto Compare: ${}'.format(localize(price)),
-        'Estimated Market Cap: ${}'.format(localize(price * supply))
-        ]
-    await client.say(context.message.author.mention + ': Here is your info for CLO')
-    await client.say('```{}```'.format('\n'.join(messages)))
-    """
-
 client.run(os.environ['TOKEN'])
