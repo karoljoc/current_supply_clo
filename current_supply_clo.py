@@ -111,6 +111,11 @@ async def add_offer(ctx, amount: float, price: float):
 @client.command(name='clo.show_offers',
                 pass_context=True)
 async def show_offers(ctx):
+    data = {
+        'author': [],
+        'amount': [],
+        'price': [],
+        }
 
     server = ctx.message.author.server
 
@@ -119,17 +124,30 @@ async def show_offers(ctx):
     if not offers:
         await client.say(ctx.message.author.mention + ': There is currently no active offers')
     else:
-        code_block = '```'
+        embed = discord.Embed(title="CLO Sell Offers", color=0x00ff00)
         for offer in offers:
             member = server.get_member(offer.author_id)
             if member:
-                line = 'Offer {:<6} {:20} {:>12} CLO @ {:<12}\n'.format(
-                    offer.id, '@{}'.format(member.name), localize(offer.amount, decimals = 0),
-                    '$ {}'.format(localize(offer.price, decimals = 4)))
-                code_block += line
-        code_block += '```'
-        await client.say(code_block)
+                data['author'].append('@{}'.format(member.name))
+                data['amount'].append(localize(offer.amount, decimals = 0))
+                data['price'].append('$ {}'.format(localize(offer.price, decimals = 4)))
+        if data['author']:
+            embed = discord.Embed(title="CLO Sell Offers", color=0x00ff00)
+            embed.add_field(name = "User", value = "\n".join(data['author']))
+            embed.add_field(name = "Selling CLO", value = "\n".join(data['amount']))
+            embed.add_field(name = "Price Each", value = "\n".join(data['price']))
+            await client.say(embed = embed)
+        else:
+            await client.say('No active offers found')
     session.close()
+
+
+@client.event
+async def on_command_error(error, *args, **kwargs):
+    ctx = args[0]
+    await client.send_message(
+        ctx.message.channel,
+        ctx.message.author.mention + ' Bad request. Please check ?clo.help')
 
 
 @client.command(name='clo.del_offer',
@@ -154,7 +172,7 @@ async def help(ctx):
     help_message = """```Here are list of available commands:
     ?clo.help: Displays a list of available commands
     ?clocs: Displays current supply, price from crypto compare and estimate marketcap
-    ?clo.add_offer [amount clo] [price each]: Add a new offer to sell
+    ?clo.add_offer [amount clo] [price each]: Add a new offer to sell. Only 1 offer per user.
     ?clo.show_offers: Display a list of current sell offers
     ?clo.del_offer: Remove your sell offer
     ```"""
