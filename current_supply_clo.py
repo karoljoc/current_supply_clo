@@ -134,7 +134,7 @@ async def build_offers(ctx):
     server = ctx.message.author.server
 
     session = Session()
-    offers = session.query(Offer).all()
+    offers = session.query(Offer).order_by('price')
     if not offers:
         await client.say(ctx.message.author.mention + ': There is currently no active offers')
     else:
@@ -211,7 +211,7 @@ async def build_bids(ctx):
     server = ctx.message.author.server
 
     session = Session()
-    bids = session.query(Bid).all()
+    bids = session.query(Bid).order_by(Bid.price.desc())
     if not bids:
         await client.say(ctx.message.author.mention + ': There is currently no active bids')
     else:
