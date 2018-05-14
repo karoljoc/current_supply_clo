@@ -120,6 +120,7 @@ async def add_offer(ctx, amount: float, price: float):
             session.add(offer)
             session.commit()
             await client.say(ctx.message.author.mention + ': New offer created: {}'.format(offer.id))
+            await build_show_all(ctx)
     session.close()
 
 
@@ -172,6 +173,7 @@ async def del_offer(ctx):
         session.delete(offer)
         session.commit()
         await client.say(ctx.message.author.mention + ': Your offer has been removed')
+        await build_show_all(ctx)
     session.close()
 
 
@@ -195,6 +197,7 @@ async def add_bid(ctx, amount: float, price: float):
             session.add(bid)
             session.commit()
             await client.say(ctx.message.author.mention + ': New bid created: {}'.format(bid.id))
+            await build_show_all(ctx)
     session.close()
 
 
@@ -234,10 +237,14 @@ async def show_bids(ctx):
     await build_bids(ctx)
 
 
-@client.command(name='clo.show_all', pass_context=True)
-async def show_all(ctx):
+async def build_show_all(ctx):
     await build_offers(ctx)
     await build_bids(ctx)
+
+
+@client.command(name='clo.show_all', pass_context=True)
+async def show_all(ctx):
+    await build_show_all(ctx)
 
 
 @client.command(name='clo.del_bid', pass_context=True)
@@ -253,6 +260,7 @@ async def del_bid(ctx):
         session.delete(bid)
         session.commit()
         await client.say(ctx.message.author.mention + ': Your bid has been removed')
+        await build_show_all(ctx)
     session.close()
 
 
