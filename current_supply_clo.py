@@ -37,6 +37,7 @@ class Offer(Base):
     author_id = Column('author_id', String(64))
     amount = Column('amount', Float)
     price = Column('price', Float)
+    author_nick = Column('author_nick', String(128), nullable = True)
 
     def __repr__(self):
         return "{}".format(self.id)
@@ -49,6 +50,7 @@ class Bid(Base):
     author_id = Column('author_id', String(64))
     amount = Column('amount', Float)
     price = Column('price', Float)
+    author_nick = Column('author_nick', String(128), nullable = True)
 
     def __repr__(self):
         return "{}".format(self.id)
@@ -116,7 +118,8 @@ async def add_offer(ctx, amount: float, price: float):
         if amount > 6500000000:
             await client.say(ctx.message.author.mention + ': Amount is greater that total supply')
         else:
-            offer = Offer(author_id = ctx.message.author.id, amount = amount, price = price)
+            offer = Offer(author_id = ctx.message.author.id, author_nick = ctx.message.author.name,
+                          amount = amount, price = price)
             session.add(offer)
             session.commit()
             await client.say(ctx.message.author.mention + ': New offer created: {}'.format(offer.id))
@@ -134,7 +137,7 @@ async def build_offers(ctx):
     server = ctx.message.author.server
 
     session = Session()
-    offers = session.query(Offer).all()
+    offers = session.query(Offer).order_by(Offer.price.desc())
     if not offers:
         await client.say(ctx.message.author.mention + ': There is currently no active offers')
     else:
@@ -193,7 +196,8 @@ async def add_bid(ctx, amount: float, price: float):
         if amount > 6500000000:
             await client.say(ctx.message.author.mention + ': Amount is greater that total supply')
         else:
-            bid = Bid(author_id = ctx.message.author.id, amount = amount, price = price)
+            bid = Bid(author_id = ctx.message.author.id, author_nick = ctx.message.author.name,
+                      amount = amount, price = price)
             session.add(bid)
             session.commit()
             await client.say(ctx.message.author.mention + ': New bid created: {}'.format(bid.id))
@@ -211,7 +215,7 @@ async def build_bids(ctx):
     server = ctx.message.author.server
 
     session = Session()
-    bids = session.query(Bid).all()
+    bids = session.query(Bid).order_by(Bid.price.desc())
     if not bids:
         await client.say(ctx.message.author.mention + ': There is currently no active bids')
     else:
