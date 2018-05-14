@@ -42,6 +42,18 @@ class Offer(Base):
         return "{}".format(self.id)
 
 
+class Bid(Base):
+    __tablename__ = "bid"
+
+    id = Column('id', Integer, primary_key = True)
+    author_id = Column('author_id', String(64))
+    amount = Column('amount', Float)
+    price = Column('price', Float)
+
+    def __repr__(self):
+        return "{}".format(self.id)
+
+
 engine = create_engine(CONNECT_STRING, echo = SQLALCHEMY_ECHO)
 Base.metadata.create_all(bind = engine)
 Session = sessionmaker(bind=engine)
@@ -54,6 +66,7 @@ def get_current_supply():
     response = requests.get('https://cloexplorer.org/total')
     return int(response.text)
 
+
 def get_current_price():
     response = requests.get(CC_API_URL, params = {'fsyms': 'CLO', 'tsyms': 'USD'}).json()
     try:
@@ -61,6 +74,7 @@ def get_current_price():
     except KeyError:
         price = 0
     return price
+
 
 def localize(value, decimals = 2):
     str_format = "{0:,.%df}" % decimals
@@ -73,8 +87,7 @@ async def on_ready():
     print ("I am running on " + client.user.name)
 
 
-@client.command(name='clocs',
-                pass_context=True)
+@client.command(name='clo.cs', pass_context=True)
 async def clo_current_supply(ctx):
     supply = get_current_supply()
     price = get_current_price()
@@ -87,8 +100,10 @@ async def clo_current_supply(ctx):
     await client.say(embed = embed)
 
 
-@client.command(name='clo.add_offer',
-                pass_context=True)
+# Offers
+
+
+@client.command(name='clo.add_offer', pass_context=True)
 async def add_offer(ctx, amount: float, price: float):
 
     session = Session()
@@ -108,9 +123,7 @@ async def add_offer(ctx, amount: float, price: float):
     session.close()
 
 
-@client.command(name='clo.show_offers',
-                pass_context=True)
-async def show_offers(ctx):
+async def build_offers(ctx):
     data = {
         'author': [],
         'amount': [],
@@ -124,7 +137,6 @@ async def show_offers(ctx):
     if not offers:
         await client.say(ctx.message.author.mention + ': There is currently no active offers')
     else:
-        embed = discord.Embed(title="CLO Sell Offers", color=0x00ff00)
         for offer in offers:
             member = server.get_member(offer.author_id)
             if member:
@@ -132,7 +144,7 @@ async def show_offers(ctx):
                 data['amount'].append(localize(offer.amount, decimals = 0))
                 data['price'].append('$ {}'.format(localize(offer.price, decimals = 4)))
         if data['author']:
-            embed = discord.Embed(title="CLO Sell Offers", color=0x00ff00)
+            embed = discord.Embed(title="CLO Sell Offers", color=0xFF007A)
             embed.add_field(name = "User", value = "\n".join(data['author']))
             embed.add_field(name = "Selling CLO", value = "\n".join(data['amount']))
             embed.add_field(name = "Price Each", value = "\n".join(data['price']))
@@ -142,17 +154,12 @@ async def show_offers(ctx):
     session.close()
 
 
-@client.event
-async def on_command_error(error, *args, **kwargs):
-    ctx = args[0]
-    print(error)
-    await client.send_message(
-        ctx.message.channel,
-        ctx.message.author.mention + ' Bad request. Please check ?clo.help')
+@client.command(name='clo.show_offers', pass_context=True)
+async def show_offers(ctx):
+    await build_offers(ctx)
 
 
-@client.command(name='clo.del_offer',
-                pass_context=True)
+@client.command(name='clo.del_offer', pass_context=True)
 async def del_offer(ctx):
     session = Session()
     offer = session.query(Offer).filter_by(author_id = str(ctx.message.author.id)).first()
@@ -168,14 +175,121 @@ async def del_offer(ctx):
     session.close()
 
 
+# Bids
+
+
+@client.command(name='clo.add_bid', pass_context=True)
+async def add_bid(ctx, amount: float, price: float):
+
+    session = Session()
+    bid = session.query(Bid).filter_by(author_id = str(ctx.message.author.id)).first()
+
+    if bid:
+        await client.say(ctx.message.author.mention + ': You already have an active bid #: {}'.format(bid.id))
+        return
+    else:
+        if amount > 6500000000:
+            await client.say(ctx.message.author.mention + ': Amount is greater that total supply')
+        else:
+            bid = Bid(author_id = ctx.message.author.id, amount = amount, price = price)
+            session.add(bid)
+            session.commit()
+            await client.say(ctx.message.author.mention + ': New bid created: {}'.format(bid.id))
+    session.close()
+
+
+async def build_bids(ctx):
+    data = {
+        'author': [],
+        'amount': [],
+        'price': [],
+        }
+
+    server = ctx.message.author.server
+
+    session = Session()
+    bids = session.query(Bid).all()
+    if not bids:
+        await client.say(ctx.message.author.mention + ': There is currently no active bids')
+    else:
+        for bid in bids:
+            member = server.get_member(bid.author_id)
+            if member:
+                data['author'].append('@{}'.format(member.name))
+                data['amount'].append(localize(bid.amount, decimals = 0))
+                data['price'].append('$ {}'.format(localize(bid.price, decimals = 4)))
+        if data['author']:
+            embed = discord.Embed(title="CLO Bid Offers", color=0x70a84d)
+            embed.add_field(name = "User", value = "\n".join(data['author']))
+            embed.add_field(name = "Buying CLO", value = "\n".join(data['amount']))
+            embed.add_field(name = "Price Each", value = "\n".join(data['price']))
+            await client.say(embed = embed)
+        else:
+            await client.say('No active bids found')
+    session.close()
+
+
+@client.command(name='clo.show_bids', pass_context=True)
+async def show_bids(ctx):
+    await build_bids(ctx)
+
+
+@client.command(name='clo.show_all', pass_context=True)
+async def show_all(ctx):
+    await build_offers(ctx)
+    await build_bids(ctx)
+
+
+@client.command(name='clo.del_bid', pass_context=True)
+async def del_bid(ctx):
+    session = Session()
+    bid = session.query(Bid).filter_by(author_id = str(ctx.message.author.id)).first()
+
+    if not bid:
+        await client.say(
+            ctx.message.author.mention + ': Did not find any of your bids')
+        return
+    else:
+        session.delete(bid)
+        session.commit()
+        await client.say(ctx.message.author.mention + ': Your bid has been removed')
+    session.close()
+
+
+@client.event
+async def on_command_error(error, *args, **kwargs):
+    ctx = args[0]
+    print(error)
+    await client.send_message(
+        ctx.message.channel,
+        ctx.message.author.mention + ' Bad request. Please check ?clo.help')
+
+
 @client.command(name='clo.help', pass_context=True)
 async def help(ctx):
     help_message = """```Here are list of available commands:
     ?clo.help: Displays a list of available commands
-    ?clocs: Displays current supply, price from crypto compare and estimate marketcap
+
+    *** Supply ****
+
+    ?clo.cs: Displays current supply, price from crypto compare and estimate marketcap
+
+    *** Sell Offers ***
+
     ?clo.add_offer [amount clo] [price each]: Add a new offer to sell. Only 1 offer per user.
-    ?clo.show_offers: Display a list of current sell offers
     ?clo.del_offer: Remove your sell offer
+    ?clo.show_offers: Display a list of current sell offers
+
+    *** Bids ***
+
+    ?clo.add_bid [amount clo] [price each]: Add a new bid to buy. Only 1 bid per user.
+    ?clo.del_bid: Remove your buying bid
+    ?clo.show_bids: Display a list of current buying bids
+
+    *** All ***
+
+    ?clo.show_all: Display both Offers and Bids
+
     ```"""
     await client.say(help_message)
 
