@@ -124,6 +124,7 @@ async def add_offer(ctx, amount: float, price: float):
             session.commit()
             await client.say(ctx.message.author.mention + ': New offer created: {}'.format(offer.id))
             await build_show_all(ctx)
+            await get_possible_trades(ctx)
     session.close()
 
 
@@ -202,6 +203,7 @@ async def add_bid(ctx, amount: float, price: float):
             session.commit()
             await client.say(ctx.message.author.mention + ': New bid created: {}'.format(bid.id))
             await build_show_all(ctx)
+            await get_possible_trades(ctx)
     session.close()
 
 
@@ -266,6 +268,32 @@ async def del_bid(ctx):
         await client.say(ctx.message.author.mention + ': Your bid has been removed')
         await build_show_all(ctx)
     session.close()
+
+
+async def get_possible_trades(ctx):
+
+    session = Session()
+
+    bids = session.query(Bid).all()
+    offers = session.query(Offer).all()
+
+    session.close()
+
+    mentions = set()
+
+    if bids and offers:
+        min_offer = min([i.price for i in offers])
+        max_bid = max([i.price for i in bids])
+
+        for offer in [i for i in offers if i.price <= max_bid]:
+            mentions.add(discord.User(id = offer.author_id))
+
+        for bid in [i for i in bids if i.price >= min_offer]:
+            mentions.add(discord.User(id = bid.author_id))
+
+    if mentions:
+        mention_string = " ".join([i.mention for i in mentions])
+        await client.say(mention_string + ' - Possible Trades Detected !!!')
 
 
 @client.event
