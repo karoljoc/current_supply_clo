@@ -1,4 +1,6 @@
-discord.py
-aiohttp
-websockets
+websockets==3.4
+discord.py==0.16.12
+aiohttp==1.0.5
 requests==2.18.4
+SQLAlchemy==1.2.7
+PyMySQL==0.8.1
