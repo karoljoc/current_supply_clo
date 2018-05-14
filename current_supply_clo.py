@@ -145,6 +145,7 @@ async def show_offers(ctx):
 @client.event
 async def on_command_error(error, *args, **kwargs):
     ctx = args[0]
+    print(error)
     await client.send_message(
         ctx.message.channel,
         ctx.message.author.mention + ' Bad request. Please check ?clo.help')
