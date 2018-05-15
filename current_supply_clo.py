@@ -56,6 +56,13 @@ class Bid(Base):
         return "{}".format(self.id)
 
 
+class Banned(Base):
+    __tablename__ = "banned"
+
+    id = Column('id', Integer, primary_key = True)
+    author_id = Column('author_id', String(64))
+
+
 engine = create_engine(CONNECT_STRING, echo = SQLALCHEMY_ECHO)
 Base.metadata.create_all(bind = engine)
 Session = sessionmaker(bind=engine)
@@ -109,6 +116,11 @@ async def clo_current_supply(ctx):
 async def add_offer(ctx, amount: float, price: float):
 
     session = Session()
+
+    if session.query(Banned).filter_by(author_id = str(ctx.message.author.id)).first():
+        await client.say(ctx.message.author.mention + ': Sorry you are not allowed to make offers')
+        return
+
     offer = session.query(Offer).filter_by(author_id = str(ctx.message.author.id)).first()
 
     if offer:
@@ -188,6 +200,11 @@ async def del_offer(ctx):
 async def add_bid(ctx, amount: float, price: float):
 
     session = Session()
+
+    if session.query(Banned).filter_by(author_id = str(ctx.message.author.id)).first():
+        await client.say(ctx.message.author.mention + ': Sorry you are not allowed to make bids')
+        return
+
     bid = session.query(Bid).filter_by(author_id = str(ctx.message.author.id)).first()
 
     if bid:
