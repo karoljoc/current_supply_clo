@@ -24,7 +24,7 @@ except KeyError:
     SQLALCHEMY_ECHO = False
 
 
-CONNECT_STRING = 'mysql+pymysql://{}:{}@localhost/{}'.format(MYSQL_USER, MYSQL_PASS, MYSQL_DB)
+CONNECT_STRING = 'mysql+pymysql://{}:{}@localhost/{}?charset=utf8'.format(MYSQL_USER, MYSQL_PASS, MYSQL_DB)
 
 
 Base = declarative_base()
