@@ -112,8 +112,8 @@ async def clo_current_supply(ctx):
 # Offers
 
 
-@client.command(name='clo.add_offer', pass_context=True)
-async def add_offer(ctx, amount: float, price: float):
+@client.command(name='clo.add_sell', pass_context=True)
+async def add_sell(ctx, amount: float, price: float):
 
     session = Session()
 
@@ -161,7 +161,7 @@ async def build_offers(ctx):
                 data['amount'].append(localize(offer.amount, decimals = 0))
                 data['price'].append('$ {}'.format(localize(offer.price, decimals = 4)))
         if data['author']:
-            embed = discord.Embed(title="CLO Sell Offers", color=0xFF007A)
+            embed = discord.Embed(title="CLO Selling", color=0xFF007A)
             embed.add_field(name = "User", value = "\n".join(data['author']))
             embed.add_field(name = "Selling CLO", value = "\n".join(data['amount']))
             embed.add_field(name = "Price Each", value = "\n".join(data['price']))
@@ -171,13 +171,13 @@ async def build_offers(ctx):
     session.close()
 
 
-@client.command(name='clo.show_offers', pass_context=True)
-async def show_offers(ctx):
+@client.command(name='clo.show_sell', pass_context=True)
+async def show_sell(ctx):
     await build_offers(ctx)
 
 
-@client.command(name='clo.del_offer', pass_context=True)
-async def del_offer(ctx):
+@client.command(name='clo.del_sell', pass_context=True)
+async def del_sell(ctx):
     session = Session()
     offer = session.query(Offer).filter_by(author_id = str(ctx.message.author.id)).first()
 
@@ -196,8 +196,8 @@ async def del_offer(ctx):
 # Bids
 
 
-@client.command(name='clo.add_bid', pass_context=True)
-async def add_bid(ctx, amount: float, price: float):
+@client.command(name='clo.add_buy', pass_context=True)
+async def add_buy(ctx, amount: float, price: float):
 
     session = Session()
 
@@ -245,7 +245,7 @@ async def build_bids(ctx):
                 data['amount'].append(localize(bid.amount, decimals = 0))
                 data['price'].append('$ {}'.format(localize(bid.price, decimals = 4)))
         if data['author']:
-            embed = discord.Embed(title="CLO Bid Offers", color=0x70a84d)
+            embed = discord.Embed(title="CLO Buying", color=0x70a84d)
             embed.add_field(name = "User", value = "\n".join(data['author']))
             embed.add_field(name = "Buying CLO", value = "\n".join(data['amount']))
             embed.add_field(name = "Price Each", value = "\n".join(data['price']))
@@ -255,8 +255,8 @@ async def build_bids(ctx):
     session.close()
 
 
-@client.command(name='clo.show_bids', pass_context=True)
-async def show_bids(ctx):
+@client.command(name='clo.show_buy', pass_context=True)
+async def show_buy(ctx):
     await build_bids(ctx)
 
 
@@ -270,8 +270,8 @@ async def show_all(ctx):
     await build_show_all(ctx)
 
 
-@client.command(name='clo.del_bid', pass_context=True)
-async def del_bid(ctx):
+@client.command(name='clo.del_buy', pass_context=True)
+async def del_buy(ctx):
     session = Session()
     bid = session.query(Bid).filter_by(author_id = str(ctx.message.author.id)).first()
 
@@ -333,15 +333,15 @@ async def help(ctx):
 
     *** Sell Offers ***
 
-    ?clo.add_offer [amount clo] [price each]: Add a new offer to sell. Only 1 offer per user.
-    ?clo.del_offer: Remove your sell offer
-    ?clo.show_offers: Display a list of current sell offers
+    ?clo.add_sell [amount clo] [price each]: Add a new offer to sell. Only 1 offer per user.
+    ?clo.del_sell: Remove your sell offer
+    ?clo.show_sell: Display a list of current sell offers
 
     *** Bids ***
 
-    ?clo.add_bid [amount clo] [price each]: Add a new bid to buy. Only 1 bid per user.
-    ?clo.del_bid: Remove your buying bid
-    ?clo.show_bids: Display a list of current buying bids
+    ?clo.add_buy [amount clo] [price each]: Add a new bid to buy. Only 1 bid per user.
+    ?clo.del_buy: Remove your buying bid
+    ?clo.show_buy: Display a list of current buying bids
 
     *** All ***
 
