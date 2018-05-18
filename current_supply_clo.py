@@ -77,12 +77,16 @@ def get_current_supply():
 
 
 def get_current_price():
-    response = requests.get(CC_API_URL, params = {'fsyms': 'CLO', 'tsyms': 'USD'}).json()
-    try:
-        price = response['CLO']['USD']
-    except KeyError:
-        price = 0
-    return price
+    response = requests.get('https://api.coinmarketcap.com/v1/ticker/bitcoin/?convert=USD').json()[0]
+    btc_price = float(response['price_usd'])
+    response = requests.get('https://stocks.exchange/api2/ticker').json()
+    ste_data = {i['market_name']: i for i in response}
+    item = ste_data.get(u'CLO_BTC', None)
+    if item:
+        price_usd = float(item['last']) * btc_price
+    else:
+        price_usb = 0
+    return price_usd
 
 
 def localize(value, decimals = 2):
