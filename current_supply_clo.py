@@ -93,25 +93,45 @@ async def clo_current_supply(ctx):
 
     btc_response = requests.get('https://api.coinmarketcap.com/v1/ticker/bitcoin/?convert=USD').json()[0]
     btc_price = float(btc_response['price_usd'])
+    eth_response = requests.get('https://api.coinmarketcap.com/v1/ticker/ethereum/?convert=USD').json()[0]
+    eth_price = float(eth_response['price_usd'])
+
     ste_response = requests.get('https://stocks.exchange/api2/ticker').json()
     ste_data = {i['market_name']: i for i in ste_response}
+
     item = ste_data.get(u'CLO_BTC', None)
-    if item and btc_price:
+    eth_item = ste_data.get(u'CLO_ETH', None)
+
+    if item and eth_item and btc_price and eth_price:
         price_usd = float(item['last']) * btc_price
+        eth_price_usd = float(eth_item['last']) * eth_price
         sat = float(item['last'])
+        eth = float(eth_item['last'])
+
         vol = float(item['vol'])
+        eth_vol = float(eth_item['vol'])
+
         min24h = float(item['bid'])
         max24h = float(item['ask'])
 
+        eth_min24h = float(eth_item['bid'])
+        eth_max24h = float(eth_item['ask'])
+
         await client.say(ctx.message.author.mention + ': Here is your info for CLO')
-        embed = discord.Embed(title="CLO Stats", color=0x00ff00)
+        embed = discord.Embed()
         embed.add_field(name = "Current Supply", value = "{}".format(localize(supply)))
         embed.add_field(name = "Market Cap", value = "$ {}".format(localize(price_usd * supply)))
         embed.add_field(name = "Volume CLO 24h", value = "{}".format(localize(vol, decimals = 4)))
-        embed.add_field(name = "Current Sat", value = "{}".format(localize(sat, decimals = 8)))
-        embed.add_field(name = "Min 24h Sat", value = "{}".format(localize(min24h, decimals = 8)))
-        embed.add_field(name = "Max 24h Sat", value = "{}".format(localize(max24h, decimals = 8)))
-        embed.add_field(name = "Price USD", value = "$ {}".format(localize(price_usd, decimals = 4)))
+        embed.add_field(name = "Current BTC", value = "{}".format(localize(sat, decimals = 8)))
+        embed.add_field(name = "Min 24h BTC", value = "{}".format(localize(min24h, decimals = 8)))
+        embed.add_field(name = "Max 24h BTC", value = "{}".format(localize(max24h, decimals = 8)))
+        embed.add_field(name = "Current ETH", value = "{}".format(localize(eth, decimals = 8)))
+        embed.add_field(name = "Min 24h ETH", value = "{}".format(localize(eth_min24h, decimals = 8)))
+        embed.add_field(name = "Max 24h ETH", value = "{}".format(localize(eth_max24h, decimals = 8)))
+        embed.add_field(name = "Price USD/BTC", value = "$ {}".format(localize(price_usd, decimals = 4)))
+        embed.add_field(name = "Price USD/ETH", value = "$ {}".format(localize(eth_price_usd, decimals = 4)))
+        embed.add_field(name = "Price Average", value = "$ {}".format(
+            localize((eth_price_usd + price_usd)/ 2, decimals = 4)))
         await client.say(embed = embed)
     else:
         await client.say(ctx.message.author.mention + ': Sorry api did not return results')
