@@ -76,19 +76,6 @@ def get_current_supply():
     return int(response.text)
 
 
-def get_current_price():
-    response = requests.get('https://api.coinmarketcap.com/v1/ticker/bitcoin/?convert=USD').json()[0]
-    btc_price = float(response['price_usd'])
-    response = requests.get('https://stocks.exchange/api2/ticker').json()
-    ste_data = {i['market_name']: i for i in response}
-    item = ste_data.get(u'CLO_BTC', None)
-    if item:
-        price_usd = float(item['last']) * btc_price
-    else:
-        price_usb = 0
-    return price_usd
-
-
 def localize(value, decimals = 2):
     str_format = "{0:,.%df}" % decimals
     return str_format.format(value)
@@ -103,14 +90,31 @@ async def on_ready():
 @client.command(name='clo.cs', pass_context=True)
 async def clo_current_supply(ctx):
     supply = get_current_supply()
-    price = get_current_price()
 
-    await client.say(ctx.message.author.mention + ': Here is your info for CLO')
-    embed = discord.Embed(title="CLO Current Supply Info", color=0x00ff00)
-    embed.add_field(name = "Current Supply", value = "{} CLO".format(localize(supply)))
-    embed.add_field(name = "Price Crypto Compare", value = "$ {}".format(localize(price)))
-    embed.add_field(name = "Estimated Market Cap", value = "$ {}".format(localize(price * supply)))
-    await client.say(embed = embed)
+    btc_response = requests.get('https://api.coinmarketcap.com/v1/ticker/bitcoin/?convert=USD').json()[0]
+    btc_price = float(btc_response['price_usd'])
+    ste_response = requests.get('https://stocks.exchange/api2/ticker').json()
+    ste_data = {i['market_name']: i for i in ste_response}
+    item = ste_data.get(u'CLO_BTC', None)
+    if item and btc_price:
+        price_usd = float(item['last']) * btc_price
+        sat = float(item['last'])
+        vol = float(item['vol'])
+        min24h = float(item['bid'])
+        max24h = float(item['ask'])
+
+        await client.say(ctx.message.author.mention + ': Here is your info for CLO')
+        embed = discord.Embed(title="CLO Stats", color=0x00ff00)
+        embed.add_field(name = "Current Supply", value = "{}".format(localize(supply)))
+        embed.add_field(name = "Market Cap", value = "$ {}".format(localize(price_usd * supply)))
+        embed.add_field(name = "Volume CLO 24h", value = "{}".format(localize(vol, decimals = 4)))
+        embed.add_field(name = "Current Sat", value = "{}".format(localize(sat, decimals = 8)))
+        embed.add_field(name = "Min 24h Sat", value = "{}".format(localize(min24h, decimals = 8)))
+        embed.add_field(name = "Max 24h Sat", value = "{}".format(localize(max24h, decimals = 8)))
+        embed.add_field(name = "Price USD", value = "$ {}".format(localize(price_usd, decimals = 4)))
+        await client.say(embed = embed)
+    else:
+        await client.say(ctx.message.author.mention + ': Sorry api did not return results')
 
 
 # Offers
