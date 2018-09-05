@@ -30,7 +30,6 @@ async def on_ready():
 
 @client.command(name='clo.cs', pass_context=True)
 async def clo_current_supply(ctx):
-    supply = get_current_supply()
 
     try:
         item = requests.get('https://api.coinmarketcap.com/v2/ticker/2757/?convert=BTC').json()['data']
@@ -40,6 +39,7 @@ async def clo_current_supply(ctx):
     if item:
         price_usd = float(item['quotes']['USD']['price'])
         price_btc = float(item['quotes']['BTC']['price'])
+        supply = float(item['circulating_supply'])
         vol_btc = float(item['quotes']['BTC']['volume_24h'])
         rank = item['rank']
 
@@ -53,6 +53,22 @@ async def clo_current_supply(ctx):
         await client.say(embed = embed)
     else:
         await client.say(ctx.message.author.mention + ': Sorry api did not return results')
+
+
+HASH_VALUES = [
+    ('EH', 1000000000000000000),
+    ('PH', 1000000000000000),
+    ('TH', 1000000000000),
+    ('GH', 1000000000),
+    ('MH', 1000000),
+    ('kH', 1000),
+    ]
+
+def resolve_hashrate(value):
+    for symbol, amount in HASH_VALUES:
+        if value >= amount:
+            return (symbol, value / amount)
+    return ('kH', float(0))
 
 
 @client.event
